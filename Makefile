@@ -57,7 +57,11 @@ azd-login: ## 🔑 Login to Azure with azd and a SPN
 	@echo -e "\e[34m$@\e[0m" || true
 	@azd auth login --client-id ${AZURE_CLIENT_ID} --client-secret ${AZURE_CLIENT_SECRET} --tenant-id ${AZURE_TENANT_ID}
 
-deploy: azd-login ## 🚀 Deploy everything to Azure
+az-login: ## 🔑 Login to Azure with azd and a SPN
+	@echo -e "\e[34m$@\e[0m" || true
+	@azd auth login --client-id ${AZURE_CLIENT_ID} --client-secret ${AZURE_CLIENT_SECRET} --tenant-id ${AZURE_TENANT_ID}
+
+deploy: azd-login az-login ## 🚀 Deploy everything to Azure
 	@echo -e "\e[34m$@\e[0m" || true
 	@azd env new ${AZURE_ENV_NAME}
 	@azd env set AZURE_APP_SERVICE_HOSTING_MODEL code --no-prompt
