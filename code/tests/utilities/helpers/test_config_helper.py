@@ -19,7 +19,8 @@ def config_dict():
             "post_answering_prompt": "mock_post_answering_prompt",
             "enable_post_answering_prompt": False,
             "enable_content_safety": True,
-            "ai_assistant_type": "default"
+            "ai_assistant_type": "default",
+            "conversational_flow": "custom",
         },
         "messages": {
             "post_answering_filter": "mock_post_answering_filter",
@@ -64,6 +65,7 @@ def config_dict():
         "orchestrator": {
             "strategy": "langchain",
         },
+        "enable_chat_history": True,
     }
 
 
@@ -311,7 +313,7 @@ def test_save_config_as_active_validates_advanced_image_file_types_are_valid(
 
     # then
     assert str(e.value) == (
-        "Advanced image processing has been enabled for document type txt, but only ['jpeg', 'jpg', 'png', 'tiff', 'bmp'] file types are supported."
+        "Advanced image processing has not been enabled for document type txt, as only ['jpeg', 'jpg', 'png', 'tiff', 'bmp'] file types are supported."
     )
     AzureBlobStorageClientMock.assert_not_called()
 
@@ -358,14 +360,22 @@ def test_get_default_contract_assistant():
     assert isinstance(contract_assistant_prompt, str)
 
 
+def test_get_default_employee_assistant():
+    # when
+    employee_assistant_prompt = ConfigHelper.get_default_employee_assistant()
+
+    # then
+    assert employee_assistant_prompt is not None
+    assert isinstance(employee_assistant_prompt, str)
+
+
 def test_get_document_processors(config_dict: dict):
     # given
     config_dict["document_processors"] = [
-        {"document_type": "jpg", "use_advanced_image_processing": True},
         {
             "document_type": "png",
-            "chunking": {"strategy": None, "size": None, "overlap": None},
-            "loading": {"strategy": None},
+            "chunking": {"strategy": "layout", "size": 500, "overlap": 100},
+            "loading": {"strategy": "read"},
             "use_advanced_image_processing": True,
         },
         {
@@ -386,15 +396,11 @@ def test_get_document_processors(config_dict: dict):
     # then
     assert config.document_processors == [
         EmbeddingConfig(
-            document_type="jpg",
-            chunking=None,
-            loading=None,
-            use_advanced_image_processing=True,
-        ),
-        EmbeddingConfig(
             document_type="png",
-            chunking=None,
-            loading=None,
+            chunking=ChunkingSettings(
+                {"strategy": "layout", "size": 500, "overlap": 100}
+            ),
+            loading=LoadingSettings({"strategy": "read"}),
             use_advanced_image_processing=True,
         ),
         EmbeddingConfig(
@@ -429,7 +435,20 @@ def test_get_available_document_types_when_advanced_image_processing_enabled(
 
     # then
     assert sorted(document_types) == sorted(
-        ["txt", "pdf", "url", "html", "htm", "md", "jpeg", "jpg", "png", "docx", "tiff", "bmp"]
+        [
+            "txt",
+            "pdf",
+            "url",
+            "html",
+            "htm",
+            "md",
+            "jpeg",
+            "jpg",
+            "png",
+            "docx",
+            "tiff",
+            "bmp",
+        ]
     )
 
 
